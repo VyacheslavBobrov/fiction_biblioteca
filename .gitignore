@@ -1,0 +1,7 @@
+*.log
+docs
+doc
+*.class
+*.*~
+tests/*
+*.sql
