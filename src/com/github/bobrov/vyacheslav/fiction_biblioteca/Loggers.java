@@ -15,12 +15,12 @@ import org.apache.log4j.xml.DOMConfigurator;
  * Логгеры классов, пул для управления и выдачи классам
  * @author Vyacheslav Bobrov
  */
-public class Loggers {
+public class Loggers implements ConfigListenerIf {
 	static final Loggers INSTANCE=new Loggers();
 	static Loggers getInstance(){
 		return INSTANCE;
 	}
-	Loggers() {	
+	Loggers() {		
 	}
 	
 	/**Таблица используемых логгеров*/
@@ -98,5 +98,12 @@ public class Loggers {
 	public void setLogLevel(String logLevel){
 		Level newLevel=Level.toLevel(logLevel);
 		setLogLevel(newLevel);
+	}
+	@Override
+	public void onConfigChange() {
+		BiblConfig config=BiblConfig.getInstance();
+		
+		setLogConfig(config.getBibl_log_config());
+		setLogLevel(config.getBibl_log_level());		
 	}
 }
