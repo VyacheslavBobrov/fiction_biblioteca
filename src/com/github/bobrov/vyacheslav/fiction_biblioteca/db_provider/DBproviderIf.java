@@ -23,4 +23,12 @@ public interface DBproviderIf {
 	 * @return список книг
 	 */
 	public List<Book> load();
+	
+	/**
+	 * Получить время последней модификации файла в каталоге с книгами.
+	 * Нужно для быстрого поиска добавленных или измененных книг.
+	 * @param dir каталог с книгами
+	 * @return время последней модификации
+	 */
+	public long getLastModified(String dir);
 }
