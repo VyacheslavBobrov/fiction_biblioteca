@@ -17,7 +17,7 @@ import org.apache.log4j.xml.DOMConfigurator;
  */
 public class Loggers implements ConfigListenerIf {
 	static final Loggers INSTANCE=new Loggers();
-	static Loggers getInstance(){
+	public static Loggers getInstance(){
 		return INSTANCE;
 	}
 	Loggers() {		
