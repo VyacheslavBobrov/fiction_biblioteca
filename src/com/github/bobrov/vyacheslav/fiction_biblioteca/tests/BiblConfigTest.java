@@ -26,10 +26,38 @@ public class BiblConfigTest {
 	BiblConfig biblConfig=BiblConfig.getInstance();
 	
 	Logger logger=Loggers.getInstance().getLogger(BiblConfigTest.class);
+	
+	/**
+	 * @throws java.lang.Exception
+	 */
+	@BeforeClass
+	public static void setUpBeforeClass() throws Exception {
+	}
+
+	/**
+	 * @throws java.lang.Exception
+	 */
+	@AfterClass
+	public static void tearDownAfterClass() throws Exception {
+	}
+
+	/**
+	 * @throws java.lang.Exception
+	 */
+	@Before
+	public void setUp() throws Exception {
+	}
+
+	/**
+	 * @throws java.lang.Exception
+	 */
+	@After
+	public void tearDown() throws Exception {
+	}
 		
 	/**
-	 * Тестирование корректности записи/чтения из конфигурации списка каталогов библиотек.
 	 * Test method for {@link com.github.bobrov.vyacheslav.fiction_biblioteca.BiblConfig#setBibl_lib_dirs(java.lang.String[])}.
+	 * Тестирование корректности записи/чтения из конфигурации списка каталогов библиотек.
 	 */
 	@Test
 	public void testSetBibl_lib_dirs() {		
@@ -48,7 +76,6 @@ public class BiblConfigTest {
 	}
 
 	/**
-	 * Тест корректности изменения уровня логгирования системы
 	 * Test method for {@link com.github.bobrov.vyacheslav.fiction_biblioteca.BiblConfig#setBibl_log_level(java.lang.String)}.
 	 */
 	@Test
