@@ -25,12 +25,7 @@ public class BookSyncImpl implements BookSyncIf {
 	public BookSyncImpl() {
 	}
 	
-	File[] getModifiedFiles(final long fromModTime, String dirName){
-		File dir=new File(dirName);
-		if(!dir.exists()){
-			logger.error(String.format(DIR_NOT_FOUND, dirName));
-			return null;
-		}
+	ArrayList<File> getModifiedFiles(final long fromModTime, File dir){		
 		
 		File[] newFiles=dir.listFiles(new FileFilter() {			
 			@Override
@@ -42,11 +37,31 @@ public class BookSyncImpl implements BookSyncIf {
 			}
 		});
 		
-		return newFiles;
+		ArrayList<File> retFiles=new ArrayList<>(newFiles.length);
+		for(File file:newFiles)
+			if(file.isDirectory())
+				retFiles.addAll(getModifiedFiles(fromModTime, file));
+			else
+				retFiles.add(file);		
+			
+		return retFiles;
+	}
+	
+	ArrayList<File> getModifiedFiles(final long fromModTime, String dirName){
+		File dir=new File(dirName);
+		if(!dir.exists()){
+			logger.error(String.format(DIR_NOT_FOUND, dirName));
+			return null;
+		}
+		
+		if(dir.lastModified()<=fromModTime)
+			return null;
+		
+		return getModifiedFiles(fromModTime, dir);
 	}	
 	
-	List<Book> loadBooksFromFile(File bookFile){
-		return null; //TODO заглушка
+	List<Book> loadBooksFromFile(File bookFile){		
+		return null;
 	}
 
 	/* (non-Javadoc)
@@ -56,9 +71,9 @@ public class BookSyncImpl implements BookSyncIf {
 	public void sync(DBproviderIf provider, List<String> dirs) {
 		for(String dir:dirs){
 			long lastModified=provider.getLastModified(dir);			
-			File[] newFiles=getModifiedFiles(lastModified, dir);
+			ArrayList<File> newFiles=getModifiedFiles(lastModified, dir);
 			
-			if(newFiles==null || newFiles.length==0)
+			if(newFiles==null || newFiles.isEmpty())
 				continue;
 			
 			ArrayList<Book> books=new ArrayList<>();
