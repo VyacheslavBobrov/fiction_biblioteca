@@ -60,7 +60,19 @@ public class BookSyncImpl implements BookSyncIf {
 		return getModifiedFiles(fromModTime, dir);
 	}	
 	
+	String getFileType(File file){
+		String fileName=file.toString();
+		
+		int lastDot=fileName.lastIndexOf(".");
+		if(lastDot==-1)
+			return null;
+		
+		String type=fileName.substring(lastDot);
+		return type;
+	}
+	
 	List<Book> loadBooksFromFile(File bookFile){		
+		String type=getFileType(bookFile);
 		return null;
 	}
 
