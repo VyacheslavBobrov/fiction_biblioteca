@@ -17,7 +17,7 @@ import org.apache.log4j.Logger;
  * Конфигурация системы.
  * @author Vyacheslav Bobrov
  */
-public class Config {
+public abstract class Config {
 	Logger logger=Loggers.getInstance().getLogger(Config.class);
 
 	public static final String COULD_NOT_OPEN_CONFIG				=	"Невозможно загрузить конфигурацию, " +
@@ -36,7 +36,7 @@ public class Config {
 	 * @param configFile имя файла конфигурации
 	 * @param fieldPref префикс имен полей конфигурации
 	 */
-	public void saveConfig(String configFile, String fieldPref){
+	public void saveConfig(/*Object child, */String configFile, String fieldPref){
 		Properties props = new Properties();
 		try {			
 			File file=new File(configFile);			
@@ -45,7 +45,7 @@ public class Config {
 						
 			Field[] fields=this.getClass().getDeclaredFields();			
 			for(Field field:fields){
-				String fieldName=field.getName();				
+				String fieldName=field.getName();
 				if(fieldName.startsWith(fieldPref)){					
 					fieldName=fieldName.replace("_", ".");
 					props.setProperty(fieldName, (String) field.get(this));

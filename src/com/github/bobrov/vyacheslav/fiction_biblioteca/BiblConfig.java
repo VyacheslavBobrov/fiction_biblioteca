@@ -13,19 +13,19 @@ public class BiblConfig extends Config {
 	static public BiblConfig getInstance(){
 		return CONFIG;
 	}
-	BiblConfig(){
+	protected BiblConfig(){
 		/**Подпишемся на получение сообщений об изменении конфигурации
 		 * в виде исключения тут, что-бы исключить зацикливание при инициализации
 		 * конфигурации и логгера
 		 * */
 		addListener(Loggers.getInstance());
 		
-		watchConfig(CONFIG_FILE_NAME, FIELD_PREF);
+		//watchConfig(CONFIG_FILE_NAME, FIELD_PREF);
 	}
 	
 	Logger logger=Loggers.getInstance().getLogger(BiblConfig.class);
 	
-	final String FIELD_PREF="bibl_";
+	protected final String FIELD_PREF="bibl_";
 	/**Имя конфигурационного файла*/
 	public static final String CONFIG_FILE_NAME					=	"bibl.config.xml";
 	
@@ -35,14 +35,18 @@ public class BiblConfig extends Config {
 			+ LOG_LEVEL_PATT;	
 	
 	/**Имя файла с настройками системы логгирования*/
-	private String bibl_log_config			="/log4j.xml";
+	protected String bibl_log_config			="/log4j.xml";
 	/**Уровень логгирования, одно из значений: (ALL|TRACE|WARN|INFO|DEBUG|ERROR|FATAL|OFF)*/ 
-	private String bibl_log_level			="TRACE";
+	protected String bibl_log_level			="TRACE";
 	
 	/**
 	 * Список каталогов с книгами, разделенный точкой с запятой ';'
 	 */
-	private String bibl_lib_dirs="~/books";
+	protected String bibl_lib_dirs="~/books";
+	
+	public void saveConfig(){
+		saveConfig(CONFIG_FILE_NAME, FIELD_PREF);
+	}
 		
 	/**
 	 * Получить список каталогов с книгами
@@ -61,7 +65,7 @@ public class BiblConfig extends Config {
 			dirs+=dir+";";
 			
 		this.bibl_lib_dirs = dirs;
-		saveConfig(CONFIG_FILE_NAME, FIELD_PREF);
+		saveConfig();
 	}
 	/**
 	 * Получить имя файла настроек лога
@@ -76,7 +80,7 @@ public class BiblConfig extends Config {
 	 */
 	public void setBibl_log_config(String bibl_log_config) {
 		this.bibl_log_config = bibl_log_config;
-		saveConfig(CONFIG_FILE_NAME, FIELD_PREF);
+		saveConfig();
 	}
 	/**
 	 * Получить уровень логгирования
@@ -93,6 +97,6 @@ public class BiblConfig extends Config {
 		if(!bibl_log_level.matches(LOG_LEVEL_PATT))
 			logger.error(String.format(ERROR_LOG_LEVEL, bibl_log_level));
 		this.bibl_log_level = bibl_log_level;
-		saveConfig(CONFIG_FILE_NAME, FIELD_PREF);
+		saveConfig();
 	}
 }
