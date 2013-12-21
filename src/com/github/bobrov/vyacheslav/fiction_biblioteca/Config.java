@@ -23,20 +23,22 @@ public abstract class Config {
 	public static final String COULD_NOT_OPEN_CONFIG				=	"Невозможно загрузить конфигурацию, " +
 																		"будут использованы значения по умолчанию";
 	
+	static final String READ_CONF_FILE="Считан файл конфигурации";
+	
 	ArrayList<ConfigListenerIf> listeners=new ArrayList<>();
 	
 	/**Время последней модификации конфигурационного файла*/
-	private long lastModified=0l;
+	private volatile long lastModified=0l;
 	
 	/**Время между проверками изменения конфигурационного файла, в миллисекундах*/
-	final long TIME_TO_WAIT=500;
+	public static final long TIME_TO_WAIT=500;
 	
 	/**
 	 * Переписать конфигурацию	
 	 * @param configFile имя файла конфигурации
 	 * @param fieldPref префикс имен полей конфигурации
 	 */
-	public void saveConfig(/*Object child, */String configFile, String fieldPref){
+	synchronized public void saveConfig(/*Object child, */String configFile, String fieldPref){
 		Properties props = new Properties();
 		try {			
 			File file=new File(configFile);			
@@ -54,13 +56,14 @@ public abstract class Config {
 			
 			props.storeToXML(os, "", "UTF-8");
 			lastModified=System.currentTimeMillis();
-			
+			os.close();
 		} catch (IllegalArgumentException | IllegalAccessException | IOException e) {			
 			logger.error(Config.COULD_NOT_OPEN_CONFIG, e);
 			return;
 		}
 		
 		notifiListeners();
+		notifyAll();
 	}
 	
 	/**
@@ -69,7 +72,7 @@ public abstract class Config {
 	 * @param lastModified время модификации файла
 	 * @param fieldPref префикс имен полей конфигурации
 	 */
-	public void reloadConfig(String configFile, String fieldPref){
+	synchronized public void reloadConfig(String configFile, String fieldPref){
 		Properties props = new Properties();
 		try {			
 			File file=new File(configFile);
@@ -89,29 +92,38 @@ public abstract class Config {
 					field.set(this, props.getProperty(fieldName, (String) field.get(this)));					
 				}
 			}
+			is.close();
 			
-		} catch (IllegalArgumentException | IllegalAccessException | IOException e) {			
-			logger.error(Config.COULD_NOT_OPEN_CONFIG, e);
+		} catch (IllegalArgumentException e){
+			logger.error(Config.COULD_NOT_OPEN_CONFIG+" IllegalArgumentException", e);
+			return;			
+		} catch (IllegalAccessException e) {
+			logger.error(Config.COULD_NOT_OPEN_CONFIG+" IllegalAccessException", e);
 			return;
-		}		
+		} catch (IOException e) {
+			logger.error(Config.COULD_NOT_OPEN_CONFIG+" IOException", e);
+			return;
+		}
 		
+		logger.info(READ_CONF_FILE);
 		notifiListeners();
 	}
 	
 	public void watchConfig(final String configFile, final String fieldPref) {
 		//TODO Переписать на Concurrent
-		new Runnable() {
-			public void run() {
-				while(true){
-					reloadConfig(configFile, fieldPref);
-					try {
-						Thread.sleep(TIME_TO_WAIT);
-					} catch (InterruptedException e) {						
-						e.printStackTrace();
+		new Thread(
+			new Runnable() {
+				public void run() {
+					while(true){
+						reloadConfig(configFile, fieldPref);
+						try {
+							Thread.sleep(TIME_TO_WAIT);
+						} catch (InterruptedException e) {						
+							e.printStackTrace();
+						}
 					}
 				}
-			}
-		}.run();
+			}).start();
 	}
 	
 	/**
@@ -120,6 +132,7 @@ public abstract class Config {
 	 */
 	public void addListener(ConfigListenerIf listener){
 		listeners.add(listener);
+		logger.trace("Добавлен слушатель :"+listener.getClass().getName());
 	}
 	
 	/**
@@ -128,6 +141,7 @@ public abstract class Config {
 	 */
 	public void removeListener(ConfigListenerIf listener){
 		listeners.remove(listener);
+		logger.trace("Удален слушатель :"+listener.getClass().getName());
 	}
 	
 	/**
