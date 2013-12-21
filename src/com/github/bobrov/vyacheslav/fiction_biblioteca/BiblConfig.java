@@ -14,13 +14,13 @@ public class BiblConfig extends Config {
 		return CONFIG;
 	}
 	protected BiblConfig(){
+		reloadConfig();
 		/**Подпишемся на получение сообщений об изменении конфигурации
 		 * в виде исключения тут, что-бы исключить зацикливание при инициализации
 		 * конфигурации и логгера
 		 * */
 		addListener(Loggers.getInstance());
-		
-		//watchConfig(CONFIG_FILE_NAME, FIELD_PREF);
+		watchConfig();
 	}
 	
 	Logger logger=Loggers.getInstance().getLogger(BiblConfig.class);
@@ -44,9 +44,17 @@ public class BiblConfig extends Config {
 	 */
 	protected String bibl_lib_dirs="~/books";
 	
+	public void watchConfig(){		
+		watchConfig(CONFIG_FILE_NAME, FIELD_PREF);
+	}
+	
 	public void saveConfig(){
 		saveConfig(CONFIG_FILE_NAME, FIELD_PREF);
 	}
+	
+	public void reloadConfig(){
+		reloadConfig(CONFIG_FILE_NAME, FIELD_PREF);
+	}	
 		
 	/**
 	 * Получить список каталогов с книгами
