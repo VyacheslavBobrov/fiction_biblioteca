@@ -94,15 +94,9 @@ public abstract class Config {
 			}
 			is.close();
 			
-		} catch (IllegalArgumentException e){
+		} catch (IllegalArgumentException | IllegalAccessException | IOException e){
 			logger.error(Config.COULD_NOT_OPEN_CONFIG+" IllegalArgumentException", e);
 			return;			
-		} catch (IllegalAccessException e) {
-			logger.error(Config.COULD_NOT_OPEN_CONFIG+" IllegalAccessException", e);
-			return;
-		} catch (IOException e) {
-			logger.error(Config.COULD_NOT_OPEN_CONFIG+" IOException", e);
-			return;
 		}
 		
 		logger.info(READ_CONF_FILE);
