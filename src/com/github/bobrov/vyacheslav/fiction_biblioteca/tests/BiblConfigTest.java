@@ -5,6 +5,8 @@ package com.github.bobrov.vyacheslav.fiction_biblioteca.tests;
 
 import static org.junit.Assert.*;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -13,6 +15,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.bobrov.vyacheslav.fiction_biblioteca.BiblConfig;
+import com.github.bobrov.vyacheslav.fiction_biblioteca.ConfigListenerIf;
+import com.github.bobrov.vyacheslav.fiction_biblioteca.Loggers;
 
 /**
  * Тестирование работы системы настроек приложения
@@ -20,6 +24,8 @@ import com.github.bobrov.vyacheslav.fiction_biblioteca.BiblConfig;
  */
 public class BiblConfigTest {	
 	BiblConfig biblConfig=BiblConfig.getInstance();
+	
+	Logger logger=Loggers.getInstance().getLogger(BiblConfigTest.class);
 	
 	/**
 	 * @throws java.lang.Exception
@@ -48,7 +54,7 @@ public class BiblConfigTest {
 	@After
 	public void tearDown() throws Exception {
 	}
-	
+		
 	/**
 	 * Test method for {@link com.github.bobrov.vyacheslav.fiction_biblioteca.BiblConfig#setBibl_lib_dirs(java.lang.String[])}.
 	 * Тестирование корректности записи/чтения из конфигурации списка каталогов библиотек.
@@ -70,19 +76,20 @@ public class BiblConfigTest {
 	}
 
 	/**
-	 * Test method for {@link com.github.bobrov.vyacheslav.fiction_biblioteca.BiblConfig#setBibl_log_config(java.lang.String)}.
-	 */
-	@Test
-	public void testSetBibl_log_config() {
-		fail("Not yet implemented");
-	}
-
-	/**
 	 * Test method for {@link com.github.bobrov.vyacheslav.fiction_biblioteca.BiblConfig#setBibl_log_level(java.lang.String)}.
 	 */
 	@Test
 	public void testSetBibl_log_level() {
-		fail("Not yet implemented");
+		Level level=logger.getLevel();
+		
+		try {
+			final String NEW_LEVEL="ERROR";
+			biblConfig.setBibl_log_level(NEW_LEVEL);
+			
+			Assert.assertEquals(NEW_LEVEL, logger.getLevel().toString());
+		} finally {
+			biblConfig.setBibl_log_level(level.toString());
+		}
 	}
 
 	/**
@@ -93,12 +100,29 @@ public class BiblConfigTest {
 		fail("Not yet implemented");
 	}
 
+	boolean listenerNotified;
 	/**
 	 * Test method for {@link com.github.bobrov.vyacheslav.fiction_biblioteca.Config#notifiListeners()}.
 	 */
 	@Test
 	public void testNotifiListeners() {
-		fail("Not yet implemented");
+		listenerNotified=false;
+		
+		biblConfig.addListener(new ConfigListenerIf() {
+			
+			@Override
+			public void onConfigChange() {
+				listenerNotified=true;
+			}
+		});
+		
+		String[] libDirs=biblConfig.getBibl_lib_dirs();
+		try {
+			biblConfig.setBibl_lib_dirs("aaa;bbb".split(";"));
+			
+			Assert.assertTrue(listenerNotified);
+		} finally {
+			biblConfig.setBibl_lib_dirs(libDirs);
+		}
 	}
-
 }
