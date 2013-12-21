@@ -3,5 +3,5 @@ docs
 doc
 *.class
 *.*~
-tests/*
+bin/*
 *.sql
