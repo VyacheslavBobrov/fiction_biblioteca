@@ -70,6 +70,13 @@ public class Book {
 		return annotation;
 	}
 
+	public void addAnnotationLine(String line){
+		if(annotation==null)
+			annotation=line;
+		else
+			annotation+="\n"+line;
+	}
+	
 	public void setAnnotation(String annotation) {
 		this.annotation = annotation;
 	}
@@ -100,6 +107,10 @@ public class Book {
 
 	public ArrayList<String> getGenres() {
 		return genres;
+	}
+	
+	public void addGenre(String genre){
+		genres.add(genre);
 	}
 
 	public void setGenres(ArrayList<String> genres) {

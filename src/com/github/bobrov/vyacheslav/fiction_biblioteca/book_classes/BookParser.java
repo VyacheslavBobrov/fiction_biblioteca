@@ -5,24 +5,17 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 class BookParser extends DefaultHandler {
+	
+	//Названия элементов fb2
 	private static final String P = "p";
-
 	private static final String ANNOTATION = "annotation";
-
 	private static final String BOOK_TITLE = "book-title";
-
 	private static final String LAST_NAME = "last-name";
-
 	private static final String MIDDLE_NAME = "middle-name";
-
 	private static final String FIRST_NAME = "first-name";
-
 	private static final String AUTHOR = "author";
-
 	private static final String GENRE = "genre";
-
 	private static final String TITLE_INFO = "title-info";
-
 	private static final String DESCRIPTION = "description";
 
 	Book book;
@@ -66,13 +59,10 @@ class BookParser extends DefaultHandler {
 			book.setTitle(new String(ch, start, length));
 		
 		if(inAnnotation && inP)
-			book.setAnnotation(
-				(book.getAnnotation()==null?"":book.getAnnotation()+"\n")+
-				new String(ch, start, length)
-			);
+			book.addAnnotationLine(new String(ch, start, length));
 		
 		if(inGenre){
-			book.getGenres().add(new String(ch, start, length));
+			book.addGenre(new String(ch, start, length));
 			Book.logger.trace("genre="+new String(ch, start, length));
 		}
 		
