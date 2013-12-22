@@ -23,7 +23,7 @@ public class BiblConfig extends Config {
 		watchConfig();
 	}
 	
-	Logger logger=Loggers.getInstance().getLogger(BiblConfig.class);
+	static Logger logger=Loggers.getInstance().getLogger(BiblConfig.class);
 	
 	protected final String FIELD_PREF="bibl_";
 	/**Имя конфигурационного файла*/

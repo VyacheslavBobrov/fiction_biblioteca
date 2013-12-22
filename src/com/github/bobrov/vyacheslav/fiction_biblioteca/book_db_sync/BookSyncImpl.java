@@ -5,6 +5,8 @@ package com.github.bobrov.vyacheslav.fiction_biblioteca.book_db_sync;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,9 +20,10 @@ import com.github.bobrov.vyacheslav.fiction_biblioteca.db_provider.DBproviderIf;
  * @author Vyacheslav Bobrov
  */
 public class BookSyncImpl implements BookSyncIf {
-	Logger logger=Loggers.getInstance().getLogger(BookSyncImpl.class);
+	static Logger logger=Loggers.getInstance().getLogger(BookSyncImpl.class);
 	
 	static final String DIR_NOT_FOUND="Каталог с книгами (%s) не существует!";
+	static final String FILE_READ_ERROR="Ошибка чтения файла книги: %s";
 
 	public BookSyncImpl() {
 	}
@@ -71,9 +74,26 @@ public class BookSyncImpl implements BookSyncIf {
 		return type;
 	}
 	
-	List<Book> loadBooksFromFile(File bookFile){		
+	ArrayList<Book> loadBooksFromFile(File bookFile){		
+		ArrayList<Book> ret=new ArrayList<>();
+		
 		String type=getFileType(bookFile);
-		return null;
+		
+		DearchiverFactory factory=DearchiverFactory.getInstance();
+		
+		DearchiverIf arch=factory.getDearchiverForFileType(type);
+	
+		InputStream is;
+		try {
+			while(arch.haveNextEntry()){
+				is=arch.getEntry();
+				ret.add(Book.loadFromInputStream(is));
+			}
+		} catch (IOException e) {
+			logger.error(String.format(FILE_READ_ERROR, bookFile.getName()), e);
+		}
+		
+		return ret;
 	}
 
 	/* (non-Javadoc)

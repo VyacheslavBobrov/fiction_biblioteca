@@ -18,7 +18,7 @@ import org.apache.log4j.Logger;
  * @author Vyacheslav Bobrov
  */
 public abstract class Config {
-	Logger logger=Loggers.getInstance().getLogger(Config.class);
+	static Logger logger=Loggers.getInstance().getLogger(Config.class);
 
 	public static final String COULD_NOT_OPEN_CONFIG				=	"Невозможно загрузить конфигурацию, " +
 																		"будут использованы значения по умолчанию";

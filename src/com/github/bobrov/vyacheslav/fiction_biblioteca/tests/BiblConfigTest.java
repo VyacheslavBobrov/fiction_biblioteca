@@ -25,7 +25,7 @@ import com.github.bobrov.vyacheslav.fiction_biblioteca.Loggers;
 public class BiblConfigTest {	
 	BiblConfig biblConfig=BiblConfig.getInstance();
 	
-	Logger logger=Loggers.getInstance().getLogger(BiblConfigTest.class);
+	static Logger logger=Loggers.getInstance().getLogger(BiblConfigTest.class);
 	
 	/**
 	 * @throws java.lang.Exception
