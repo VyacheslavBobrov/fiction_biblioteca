@@ -31,6 +31,10 @@ public class Author {
 		this.patrName = patrName;
 	}
 	
+	public Author() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
 	public Author(String firstName, String lastName, String patrName) {
 		super();
 		this.firstName = firstName;
@@ -74,6 +78,11 @@ public class Author {
 		} else if (!patrName.equals(other.patrName))
 			return false;
 		return true;
+	}
+	@Override
+	public String toString() {
+		return "Author [firstName=" + firstName + ", lastName=" + lastName
+				+ ", patrName=" + patrName + "]";
 	}
 	
 	

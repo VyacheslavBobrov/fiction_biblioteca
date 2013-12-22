@@ -40,10 +40,10 @@ public class Book {
 	String annotation;
 	
 	/**Автор(ы) книги*/
-	ArrayList<Author> authors;
+	ArrayList<Author> authors=new ArrayList<>();
 	/**Серия книги*/
 	Series series;
-	ArrayList<String> genres;
+	ArrayList<String> genres=new ArrayList<>();
 		
 	
 	/**Обложка книги*/
@@ -52,6 +52,24 @@ public class Book {
 	static class BookParser extends DefaultHandler {
 		Book book;
 		
+		boolean inDescription=false;
+		boolean inTitleInfo=false;
+		
+		boolean inGenre=false;
+		
+		boolean inAuthor=false;
+		boolean inFirstName=false;
+		boolean inMiddleName=false;
+		boolean inLastName=false;
+		
+		boolean inBookTitle=false;
+		
+		boolean inAnnotation=false;
+		
+		boolean inP=false;
+		
+		Author currAuthor;
+		
 		public BookParser(Book book) {
 			this.book=book;
 		}
@@ -59,7 +77,30 @@ public class Book {
 		@Override
 		public void characters(char[] ch, int start, int length)
 				throws SAXException {
-			// TODO Auto-generated method stub
+			
+			if(inAuthor){
+				if(inFirstName)
+					currAuthor.firstName=new String(ch, start, length);
+				if(inMiddleName)
+					currAuthor.patrName=new String(ch, start, length);
+				if(inLastName)
+					currAuthor.lastName=new String(ch, start, length);
+			}
+			
+			if(inBookTitle)
+				book.setTitle(new String(ch, start, length));
+			
+			if(inAnnotation && inP)
+				book.setAnnotation(
+					(book.getAnnotation()==null?"":book.getAnnotation()+"\n")+
+					new String(ch, start, length)
+				);
+			
+			if(inGenre){
+				book.getGenres().add(new String(ch, start, length));
+				logger.trace("genre="+new String(ch, start, length));
+			}
+			
 			super.characters(ch, start, length);
 		}
 
@@ -72,7 +113,61 @@ public class Book {
 		@Override
 		public void endElement(String uri, String localName, String qName)
 				throws SAXException {
-			// TODO Auto-generated method stub
+			
+			if(qName.equals("description")){
+				inDescription=false;
+				logger.trace("End element "+localName+ " qName="+qName);
+			}
+			
+			if(qName.equals("title-info")){
+				inTitleInfo=false;
+				logger.trace("End element "+localName+ " qName="+qName);
+			}
+			
+			if(qName.equals("genre")){
+				inGenre=false;
+				logger.trace("End element "+localName+ " qName="+qName);
+			}
+			
+			if(inAuthor && qName.equals("author")){				
+				inAuthor=false;
+				book.authors.add(currAuthor);
+				logger.trace("Автор="+currAuthor);
+				logger.trace("End element "+localName+ " qName="+qName);
+			}
+			
+			if(inFirstName && qName.equals("first-name")){
+				inFirstName=false;
+				logger.trace("End element "+localName+ " qName="+qName);
+			}
+			
+			if(inMiddleName && qName.equals("middle-name")){
+				inMiddleName=false;
+				logger.trace("End element "+localName+ " qName="+qName);
+			}
+			
+			if(inLastName && qName.equals("last-name")){
+				inLastName=false;
+				logger.trace("End element "+localName+ " qName="+qName);
+			}
+			
+			if(qName.equals("book-title")){
+				inBookTitle=false;
+				logger.trace("book.title="+book.title);
+				logger.trace("End element "+localName+ " qName="+qName);
+			}
+			
+			if(qName.equals("annotation")){
+				inAnnotation=false;
+				logger.trace("book.annotation="+book.annotation);
+				logger.trace("End element "+localName+ " qName="+qName);
+			}
+			
+			if(inP && qName.equals("p")){
+				inP=false;
+				logger.trace("End element "+localName+ " qName="+qName);
+			}
+			
 			super.endElement(uri, localName, qName);
 		}
 
@@ -85,24 +180,65 @@ public class Book {
 		@Override
 		public void startElement(String uri, String localName, String qName,
 				Attributes attributes) throws SAXException {
-			if(qName.equals("description"))
+			
+			if(qName.equals("description")){
+				inDescription=true;
 				logger.trace("Start element "+localName+ " qName="+qName);
-			if(qName.equals("title-info"))
-				logger.trace("Start element "+localName+ " qName="+qName);
-			if(qName.equals("author"))
-				logger.trace("Start element "+localName+ " qName="+qName);
-			if(qName.equals("first-name"))
-				logger.trace("Start element "+localName+ " qName="+qName);
-			if(qName.equals("last-name"))
-				logger.trace("Start element "+localName+ " qName="+qName);
-			if(qName.equals("book-title"))
-				logger.trace("Start element "+localName+ " qName="+qName);
-			if(qName.equals("annotation"))
-				logger.trace("Start element "+localName+ " qName="+qName);
-			if(qName.equals("coverpage"))
-				logger.trace("Start element "+localName+ " qName="+qName);
-			if(qName.equals("image"))
-				logger.trace("Start element "+localName+ " qName="+qName);
+			}
+			
+			if(inDescription){			
+				if(qName.equals("title-info")){
+					inTitleInfo=true;
+					logger.trace("Start element "+localName+ " qName="+qName);					
+				}
+				
+				if(inTitleInfo){
+					if(qName.equals("author")){
+						currAuthor=new Author();
+						inAuthor=true;
+						logger.trace("Start element "+localName+ " qName="+qName);
+					}
+					
+					if(qName.equals("genre")){
+						inGenre=true;
+						logger.trace("Start element "+localName+ " qName="+qName);
+					}
+					
+					if(inAuthor){
+						if(qName.equals("first-name")){
+							inFirstName=true;
+							logger.trace("Start element "+localName+ " qName="+qName);
+						}
+						if(qName.equals("middle-name")){
+							inMiddleName=true;
+							logger.trace("Start element "+localName+ " qName="+qName);
+						}
+						if(qName.equals("last-name")){
+							inLastName=true;
+							logger.trace("Start element "+localName+ " qName="+qName);
+						}
+					}
+					
+					if(qName.equals("book-title")){
+						inBookTitle=true;
+						logger.trace("Start element "+localName+ " qName="+qName);
+					}
+					if(qName.equals("annotation")){
+						inAnnotation=true;
+						logger.trace("Start element "+localName+ " qName="+qName);
+					}
+					
+					if(inAnnotation && qName.equals("p")){
+						inP=true;
+						logger.trace("Start element "+localName+ " qName="+qName);
+					}
+					
+					if(qName.equals("coverpage"))
+						logger.trace("Start element "+localName+ " qName="+qName);
+					if(qName.equals("image"))
+						logger.trace("Start element "+localName+ " qName="+qName);
+				}
+			}
 				
 			super.startElement(uri, localName, qName, attributes);
 		}
