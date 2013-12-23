@@ -1,10 +1,11 @@
 package com.github.bobrov.vyacheslav.fiction_biblioteca.book_classes;
 
+import java.util.Stack;
+
 import org.apache.log4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.commons.codec.binary.Base64;
 
 import com.github.bobrov.vyacheslav.fiction_biblioteca.Loggers;
@@ -12,52 +13,65 @@ import com.github.bobrov.vyacheslav.fiction_biblioteca.Loggers;
 class BookParser extends DefaultHandler {	
 	static Logger logger= Loggers.getInstance().getLogger(BookParser.class);
 	
-	//Названия элементов fb2	
 	private static final String NUMBER = "number";
 	private static final String NAME = "name";
-	private static final String SEQUENCE = "sequence";
 	private static final String ID = "id";
-	private static final String BINARY = "binary";
 	private static final String XLINK_HREF = "xlink:href";
-	private static final String IMAGE = "image";
-	private static final String COVERPAGE = "coverpage";
-	private static final String P = "p";
-	private static final String ANNOTATION = "annotation";
-	private static final String BOOK_TITLE = "book-title";
-	private static final String LAST_NAME = "last-name";
-	private static final String MIDDLE_NAME = "middle-name";
-	private static final String FIRST_NAME = "first-name";
-	private static final String AUTHOR = "author";
-	private static final String GENRE = "genre";
-	private static final String TITLE_INFO = "title-info";
-	private static final String DESCRIPTION = "description";
 	
+	enum Elements {
+		SEQUENCE,
+		BINARY,
+		IMAGE,
+		COVERPAGE,
+		P,
+		ANNOTATION,
+		BOOK_TITLE,
+		LAST_NAME,
+		MIDDLE_NAME,
+		FIRST_NAME,
+		AUTHOR,
+		GENRE,
+		TITLE_INFO,
+		DESCRIPTION;
+		
+		static public Elements fromString(String val){
+			if (val.equals("sequence")) 
+				return SEQUENCE;
+			else if (val.equals("binary")) 
+				return BINARY;
+			else if (val.equals("image")) 
+				return IMAGE;
+			else if (val.equals("coverpage")) 
+				return COVERPAGE;
+			else if (val.equals("p")) 
+				return P;
+			else if (val.equals("annotation")) 
+				return ANNOTATION;
+			else if (val.equals("book-title")) 
+				return BOOK_TITLE;
+			else if (val.equals("last-name")) 
+				return LAST_NAME;
+			else if (val.equals("middle-name")) 
+				return MIDDLE_NAME;
+			else if (val.equals("first-name")) 
+				return FIRST_NAME;
+			else if (val.equals("author")) 
+				return AUTHOR;
+			else if (val.equals("genre")) 
+				return GENRE;
+			else if (val.equals("title-info")) 
+				return TITLE_INFO;
+			else if (val.equals("description")) 
+				return DESCRIPTION;
+			
+			return null;
+		}
+	};
+		
 	Book book;
 	
-	boolean inDescription=false;
-	boolean inTitleInfo=false;
-	
-	boolean inGenre=false;
-	
-	boolean inAuthor=false;
-	boolean inFirstName=false;
-	boolean inMiddleName=false;
-	boolean inLastName=false;
-	
-	boolean inBookTitle=false;
-	
-	boolean inAnnotation=false;
-	
-	boolean inP=false;
-	
-	boolean inCoverPage=false;
-	boolean inImage=false;
-	
-	boolean inBinary=false;
-	boolean inCoverBynary=false;
-	
-	boolean inSequence=false;
-	
+	Stack<Elements> stackElements=new Stack<>();
+		
 	String imageId;
 	
 	Author currAuthor;
@@ -76,28 +90,38 @@ class BookParser extends DefaultHandler {
 	public void characters(char[] ch, int start, int length)
 			throws SAXException {
 		
-		if(inAuthor){
-			if(inFirstName)
-				currAuthor.firstName=new String(ch, start, length);
-			if(inMiddleName)
-				currAuthor.patrName=new String(ch, start, length);
-			if(inLastName)
-				currAuthor.lastName=new String(ch, start, length);
+		Elements currElement;
+		if(stackElements.isEmpty())
+			currElement=null;
+		else 
+			currElement=stackElements.peek();
+		
+		if(currElement!=null){
+			switch(currElement){
+				case BINARY:
+					coverBuilder.append(ch, start, length);
+					break;
+				case P:
+					book.addAnnotationLine(new String(ch, start, length));
+					break;
+				case BOOK_TITLE:
+					book.setTitle(new String(ch, start, length));
+					break;
+				case LAST_NAME:
+					currAuthor.lastName=new String(ch, start, length);
+					break;
+				case MIDDLE_NAME:
+					currAuthor.patrName=new String(ch, start, length);
+					break;
+				case FIRST_NAME:
+					currAuthor.firstName=new String(ch, start, length);
+					break;
+				case GENRE:
+					book.addGenre(new String(ch, start, length));
+			default:
+				break;
+			}
 		}
-		
-		if(inBookTitle)
-			book.setTitle(new String(ch, start, length));
-		
-		if(inAnnotation && inP)
-			book.addAnnotationLine(new String(ch, start, length));
-		
-		if(inGenre){
-			book.addGenre(new String(ch, start, length));
-			logger.trace("genre="+new String(ch, start, length));
-		}
-		
-		if(inBinary && inCoverBynary)
-			coverBuilder.append(ch, start, length);
 		
 		super.characters(ch, start, length);
 	}
@@ -105,142 +129,123 @@ class BookParser extends DefaultHandler {
 	@Override
 	public void endElement(String uri, String localName, String qName)
 			throws SAXException {
-		if(qName.equals(DESCRIPTION))
-			inDescription=false;
 		
-		if(qName.equals(TITLE_INFO))
-			inTitleInfo=false;
+		Elements newElement=Elements.fromString(qName);
+		Elements currElement=null;
+		if(!stackElements.isEmpty())
+			currElement=stackElements.peek();
 		
-		if(qName.equals(GENRE))
-			inGenre=false;
-		
-		if(inAuthor && qName.equals(AUTHOR)){				
-			inAuthor=false;
-			book.authors.add(currAuthor);
-			logger.trace("Автор="+currAuthor);			
+		if(newElement!=null && currElement==newElement) {
+			switch(newElement){
+				case AUTHOR:
+					book.authors.add(currAuthor);
+					break;					
+				case BINARY:
+					byte[] cover=decodeB64(coverBuilder.toString());			
+					book.setCover(cover);					
+					break;
+				default:
+					break;	
+			}		
+			stackElements.pop();
 		}
-		
-		if(inFirstName && qName.equals(FIRST_NAME))
-			inFirstName=false;
-		
-		if(inMiddleName && qName.equals(MIDDLE_NAME))
-			inMiddleName=false;
-		
-		if(inLastName && qName.equals(LAST_NAME))
-			inLastName=false;
-		
-		if(qName.equals(BOOK_TITLE)){
-			inBookTitle=false;
-			logger.trace("book.title="+book.title);			
-		}
-		
-		if(qName.equals(ANNOTATION)){
-			inAnnotation=false;
-			logger.trace("book.annotation="+book.annotation);			
-		}
-		
-		if(inP && qName.equals(P))
-			inP=false;
-		
-		if(inCoverPage && qName.equals(COVERPAGE))
-			inCoverPage=false;
-		
-		if(inImage && qName.equals(IMAGE))
-			inImage=false;
-		
-		if(inBinary && inCoverBynary && qName.equals(BINARY)){
-			inBinary=false;
-			inCoverBynary=false;
-			
-			byte[] cover=decodeB64(coverBuilder.toString());
-			
-			book.setCover(cover);
-			
-			logger.trace("Load cover: "+cover.length+" bytes");						
-		}
-		
-		if(inSequence)
-			inSequence=false;
 		
 		super.endElement(uri, localName, qName);
+	}
+	
+	boolean isCorrectParent(Elements element, Elements parent){
+		
+		if(element==null)
+			return false;
+		
+		boolean isCorrect=false;
+		
+		switch(element){
+			case DESCRIPTION:
+			case BINARY:
+				if(parent==null)
+					isCorrect=true;
+				break;
+			case TITLE_INFO:
+				if (parent==Elements.DESCRIPTION)
+					isCorrect=true;
+				break;				
+			case SEQUENCE:
+			case COVERPAGE:
+			case ANNOTATION:				
+			case GENRE:
+			case BOOK_TITLE:
+			case AUTHOR:
+				if (parent==Elements.TITLE_INFO)
+					isCorrect=true;
+				break;				
+			case IMAGE:
+				if(parent==Elements.COVERPAGE)
+					isCorrect=true;
+				break;				
+			case P:
+				if (parent==Elements.ANNOTATION)
+					isCorrect=true;
+				break;				
+	
+			case LAST_NAME:
+			case MIDDLE_NAME:
+			case FIRST_NAME:
+				if (parent==Elements.AUTHOR)
+					isCorrect=true;
+				break;			
+			default:				
+				break;
+			}
+		
+		return isCorrect;
 	}
 
 	@Override
 	public void startElement(String uri, String localName, String qName,
 			Attributes attributes) throws SAXException {
-				
-		if(qName.equals(DESCRIPTION))
-			inDescription=true;
 		
-		if(inDescription){			
-			if(qName.equals(TITLE_INFO))
-				inTitleInfo=true;
-			
-			if(inTitleInfo){
-				if(qName.equals(AUTHOR)){
-					currAuthor=new Author();
-					inAuthor=true;
-				}
-				
-				if(qName.equals(GENRE))
-					inGenre=true;
-				
-				if(inAuthor){
-					if(qName.equals(FIRST_NAME))
-						inFirstName=true;
-					if(qName.equals(MIDDLE_NAME))
-						inMiddleName=true;
-					if(qName.equals(LAST_NAME))
-						inLastName=true;
-				}
-				
-				if(qName.equals(BOOK_TITLE))
-					inBookTitle=true;
-				if(qName.equals(ANNOTATION))
-					inAnnotation=true;
-				
-				if(inAnnotation && qName.equals(P))
-					inP=true;
-				
-				if(qName.equals(COVERPAGE))
-					inCoverPage=true;
-				
-				if(inCoverPage && qName.equals(IMAGE)){
-					inImage=true;					
-					
-					imageId=attributes.getValue(XLINK_HREF).substring(1);
-					logger.trace("imageId="+imageId);
-				}				
-				
-				if(qName.equals(SEQUENCE)){
-					inSequence=true;
-					
-					Sequence sequence=book.getSequence();
-					
-					String name=attributes.getValue(NAME);
-					if(name!=null)
-						sequence.setName(name);
-					
-					String number=attributes.getValue(NUMBER);
-					if(number!=null){					
-						Integer num=Integer.valueOf(number);
-						sequence.setNumber(num);
+		Elements newElement=Elements.fromString(qName);
+		Elements currElement=null;
+		if(!stackElements.isEmpty())
+			currElement=stackElements.peek();		
+		
+		if(isCorrectParent(newElement, currElement)){
+			switch(newElement){
+				case SEQUENCE:{
+						Sequence sequence=book.getSequence();
+						
+						String name=attributes.getValue(NAME);
+						if(name!=null)
+							sequence.setName(name);
+						
+						String number=attributes.getValue(NUMBER);
+						if(number!=null){					
+							Integer num=Integer.valueOf(number);
+							sequence.setNumber(num);
+						}
 					}
-					
-					logger.trace("Sequence="+sequence);
-				}
+					break;					
+				case BINARY:
+					if(imageId.equals(attributes.getValue(ID)))				
+						book.setCover(null);
+					else
+						newElement=null;
+					break;					
+				case IMAGE:
+					imageId=attributes.getValue(XLINK_HREF).substring(1);
+					break;
+				case AUTHOR:					
+					currAuthor=new Author();
+					break;
+			default:
+				break;
 			}
+					
+			if(newElement!=null)
+				stackElements.push(newElement);
 		}
 		
-		if(qName.equals(BINARY)){
-			inBinary=true;			
-			
-			if(imageId.equals(attributes.getValue(ID))){
-				inCoverBynary=true;				
-				book.setCover(null);
-			}
-		}
-			
 		super.startElement(uri, localName, qName, attributes);
 	}
 	
