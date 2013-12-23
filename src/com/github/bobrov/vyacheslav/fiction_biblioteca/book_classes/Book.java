@@ -40,12 +40,12 @@ public class Book {
 	/**Автор(ы) книги*/
 	ArrayList<Author> authors=new ArrayList<>();
 	/**Серия книги*/
-	Series series;
+	Sequence sequence=new Sequence();
 	ArrayList<String> genres=new ArrayList<>();
 		
 	
 	/**Обложка книги*/
-	byte[] cover;
+	byte[] cover=null;
 	
 	static public Book loadFromInputStream(InputStream is){
 		Book book=new Book();
@@ -89,12 +89,12 @@ public class Book {
 		this.authors = authors;
 	}
 
-	public Series getSeries() {
-		return series;
+	public Sequence getSequence() {
+		return sequence;
 	}
 
-	public void setSeries(Series series) {
-		this.series = series;
+	public void setSequence(Sequence series) {
+		this.sequence = series;
 	}
 
 	public byte[] getCover() {
@@ -126,12 +126,12 @@ public class Book {
 	}
 
 	public Book(String title, String annotation, ArrayList<Author> authors,
-			Series series, ArrayList<String> genres, byte[] cover) {
+			Sequence series, ArrayList<String> genres, byte[] cover) {
 		super();
 		this.title = title;
 		this.annotation = annotation;
 		this.authors = authors;
-		this.series = series;
+		this.sequence = series;
 		this.genres = genres;
 		this.cover = cover;
 	}
@@ -145,7 +145,7 @@ public class Book {
 		result = prime * result + ((authors == null) ? 0 : authors.hashCode());
 		result = prime * result + Arrays.hashCode(cover);
 		result = prime * result + ((genres == null) ? 0 : genres.hashCode());
-		result = prime * result + ((series == null) ? 0 : series.hashCode());
+		result = prime * result + ((sequence == null) ? 0 : sequence.hashCode());
 		result = prime * result + ((title == null) ? 0 : title.hashCode());
 		return result;
 	}
@@ -176,10 +176,10 @@ public class Book {
 				return false;
 		} else if (!genres.equals(other.genres))
 			return false;
-		if (series == null) {
-			if (other.series != null)
+		if (sequence == null) {
+			if (other.sequence != null)
 				return false;
-		} else if (!series.equals(other.series))
+		} else if (!sequence.equals(other.sequence))
 			return false;
 		if (title == null) {
 			if (other.title != null)

@@ -7,8 +7,9 @@ package com.github.bobrov.vyacheslav.fiction_biblioteca.book_classes;
  * Серия книг
  * @author Vyacheslav Bobrov
  */
-public class Series {
+public class Sequence {
 	String name;
+	int number=1;
 
 	public String getName() {
 		return name;
@@ -18,9 +19,12 @@ public class Series {
 		this.name = name;
 	}
 
-	public Series(String name) {
+	public Sequence(String name) {
 		super();
 		this.name = name;
+	}
+
+	public Sequence() {
 	}
 
 	@Override
@@ -39,12 +43,25 @@ public class Series {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Series other = (Series) obj;
+		Sequence other = (Sequence) obj;
 		if (name == null) {
 			if (other.name != null)
 				return false;
 		} else if (!name.equals(other.name))
 			return false;
 		return true;
+	}
+
+	public Integer getNumber() {
+		return number;
+	}
+
+	public void setNumber(int number) {
+		this.number = number;
+	}
+
+	@Override
+	public String toString() {
+		return "Sequence [name=" + name + ", number=" + number + "]";
 	}
 }

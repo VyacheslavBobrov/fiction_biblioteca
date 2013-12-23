@@ -1,12 +1,26 @@
 package com.github.bobrov.vyacheslav.fiction_biblioteca.book_classes;
 
+import org.apache.log4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-class BookParser extends DefaultHandler {
+import org.apache.commons.codec.binary.Base64;
+
+import com.github.bobrov.vyacheslav.fiction_biblioteca.Loggers;
+
+class BookParser extends DefaultHandler {	
+	static Logger logger= Loggers.getInstance().getLogger(BookParser.class);
 	
-	//Названия элементов fb2
+	//Названия элементов fb2	
+	private static final String NUMBER = "number";
+	private static final String NAME = "name";
+	private static final String SEQUENCE = "sequence";
+	private static final String ID = "id";
+	private static final String BINARY = "binary";
+	private static final String XLINK_HREF = "xlink:href";
+	private static final String IMAGE = "image";
+	private static final String COVERPAGE = "coverpage";
 	private static final String P = "p";
 	private static final String ANNOTATION = "annotation";
 	private static final String BOOK_TITLE = "book-title";
@@ -17,7 +31,7 @@ class BookParser extends DefaultHandler {
 	private static final String GENRE = "genre";
 	private static final String TITLE_INFO = "title-info";
 	private static final String DESCRIPTION = "description";
-
+	
 	Book book;
 	
 	boolean inDescription=false;
@@ -36,12 +50,28 @@ class BookParser extends DefaultHandler {
 	
 	boolean inP=false;
 	
+	boolean inCoverPage=false;
+	boolean inImage=false;
+	
+	boolean inBinary=false;
+	boolean inCoverBynary=false;
+	
+	boolean inSequence=false;
+	
+	String imageId;
+	
 	Author currAuthor;
 	
 	public BookParser(Book book) {
 		this.book=book;
 	}
+	
+	byte[] decodeB64(String b64){
+		return Base64.decodeBase64(b64.getBytes());
+	}
 
+	StringBuilder coverBuilder=new StringBuilder();
+	
 	@Override
 	public void characters(char[] ch, int start, int length)
 			throws SAXException {
@@ -63,145 +93,151 @@ class BookParser extends DefaultHandler {
 		
 		if(inGenre){
 			book.addGenre(new String(ch, start, length));
-			Book.logger.trace("genre="+new String(ch, start, length));
+			logger.trace("genre="+new String(ch, start, length));
 		}
+		
+		if(inBinary && inCoverBynary)
+			coverBuilder.append(ch, start, length);
 		
 		super.characters(ch, start, length);
 	}
 
 	@Override
-	public void endDocument() throws SAXException {
-		// TODO Auto-generated method stub
-		super.endDocument();
-	}
-
-	@Override
 	public void endElement(String uri, String localName, String qName)
 			throws SAXException {
-		
-		if(qName.equals(DESCRIPTION)){
+		if(qName.equals(DESCRIPTION))
 			inDescription=false;
-			Book.logger.trace("End element "+localName+ " qName="+qName);
-		}
 		
-		if(qName.equals(TITLE_INFO)){
+		if(qName.equals(TITLE_INFO))
 			inTitleInfo=false;
-			Book.logger.trace("End element "+localName+ " qName="+qName);
-		}
 		
-		if(qName.equals(GENRE)){
+		if(qName.equals(GENRE))
 			inGenre=false;
-			Book.logger.trace("End element "+localName+ " qName="+qName);
-		}
 		
 		if(inAuthor && qName.equals(AUTHOR)){				
 			inAuthor=false;
 			book.authors.add(currAuthor);
-			Book.logger.trace("Автор="+currAuthor);
-			Book.logger.trace("End element "+localName+ " qName="+qName);
+			logger.trace("Автор="+currAuthor);			
 		}
 		
-		if(inFirstName && qName.equals(FIRST_NAME)){
+		if(inFirstName && qName.equals(FIRST_NAME))
 			inFirstName=false;
-			Book.logger.trace("End element "+localName+ " qName="+qName);
-		}
 		
-		if(inMiddleName && qName.equals(MIDDLE_NAME)){
+		if(inMiddleName && qName.equals(MIDDLE_NAME))
 			inMiddleName=false;
-			Book.logger.trace("End element "+localName+ " qName="+qName);
-		}
 		
-		if(inLastName && qName.equals(LAST_NAME)){
+		if(inLastName && qName.equals(LAST_NAME))
 			inLastName=false;
-			Book.logger.trace("End element "+localName+ " qName="+qName);
-		}
 		
 		if(qName.equals(BOOK_TITLE)){
 			inBookTitle=false;
-			Book.logger.trace("book.title="+book.title);
-			Book.logger.trace("End element "+localName+ " qName="+qName);
+			logger.trace("book.title="+book.title);			
 		}
 		
 		if(qName.equals(ANNOTATION)){
 			inAnnotation=false;
-			Book.logger.trace("book.annotation="+book.annotation);
-			Book.logger.trace("End element "+localName+ " qName="+qName);
+			logger.trace("book.annotation="+book.annotation);			
 		}
 		
-		if(inP && qName.equals(P)){
+		if(inP && qName.equals(P))
 			inP=false;
-			Book.logger.trace("End element "+localName+ " qName="+qName);
+		
+		if(inCoverPage && qName.equals(COVERPAGE))
+			inCoverPage=false;
+		
+		if(inImage && qName.equals(IMAGE))
+			inImage=false;
+		
+		if(inBinary && inCoverBynary && qName.equals(BINARY)){
+			inBinary=false;
+			inCoverBynary=false;
+			
+			byte[] cover=decodeB64(coverBuilder.toString());
+			
+			book.setCover(cover);
+			
+			logger.trace("Load cover: "+cover.length+" bytes");						
 		}
+		
+		if(inSequence)
+			inSequence=false;
 		
 		super.endElement(uri, localName, qName);
 	}
 
 	@Override
-	public void startDocument() throws SAXException {
-		Book.logger.trace("Start document");
-		super.startDocument();
-	}
-
-	@Override
 	public void startElement(String uri, String localName, String qName,
 			Attributes attributes) throws SAXException {
-		
-		if(qName.equals(DESCRIPTION)){
+				
+		if(qName.equals(DESCRIPTION))
 			inDescription=true;
-			Book.logger.trace("Start element "+localName+ " qName="+qName);
-		}
 		
 		if(inDescription){			
-			if(qName.equals(TITLE_INFO)){
+			if(qName.equals(TITLE_INFO))
 				inTitleInfo=true;
-				Book.logger.trace("Start element "+localName+ " qName="+qName);					
-			}
 			
 			if(inTitleInfo){
 				if(qName.equals(AUTHOR)){
 					currAuthor=new Author();
 					inAuthor=true;
-					Book.logger.trace("Start element "+localName+ " qName="+qName);
 				}
 				
-				if(qName.equals(GENRE)){
+				if(qName.equals(GENRE))
 					inGenre=true;
-					Book.logger.trace("Start element "+localName+ " qName="+qName);
-				}
 				
 				if(inAuthor){
-					if(qName.equals(FIRST_NAME)){
+					if(qName.equals(FIRST_NAME))
 						inFirstName=true;
-						Book.logger.trace("Start element "+localName+ " qName="+qName);
-					}
-					if(qName.equals(MIDDLE_NAME)){
+					if(qName.equals(MIDDLE_NAME))
 						inMiddleName=true;
-						Book.logger.trace("Start element "+localName+ " qName="+qName);
-					}
-					if(qName.equals(LAST_NAME)){
+					if(qName.equals(LAST_NAME))
 						inLastName=true;
-						Book.logger.trace("Start element "+localName+ " qName="+qName);
-					}
 				}
 				
-				if(qName.equals(BOOK_TITLE)){
+				if(qName.equals(BOOK_TITLE))
 					inBookTitle=true;
-					Book.logger.trace("Start element "+localName+ " qName="+qName);
-				}
-				if(qName.equals(ANNOTATION)){
+				if(qName.equals(ANNOTATION))
 					inAnnotation=true;
-					Book.logger.trace("Start element "+localName+ " qName="+qName);
-				}
 				
-				if(inAnnotation && qName.equals(P)){
+				if(inAnnotation && qName.equals(P))
 					inP=true;
-					Book.logger.trace("Start element "+localName+ " qName="+qName);
-				}
 				
-				if(qName.equals("coverpage"))
-					Book.logger.trace("Start element "+localName+ " qName="+qName);
-				if(qName.equals("image"))
-					Book.logger.trace("Start element "+localName+ " qName="+qName);
+				if(qName.equals(COVERPAGE))
+					inCoverPage=true;
+				
+				if(inCoverPage && qName.equals(IMAGE)){
+					inImage=true;					
+					
+					imageId=attributes.getValue(XLINK_HREF).substring(1);
+					logger.trace("imageId="+imageId);
+				}				
+				
+				if(qName.equals(SEQUENCE)){
+					inSequence=true;
+					
+					Sequence sequence=book.getSequence();
+					
+					String name=attributes.getValue(NAME);
+					if(name!=null)
+						sequence.setName(name);
+					
+					String number=attributes.getValue(NUMBER);
+					if(number!=null){					
+						Integer num=Integer.valueOf(number);
+						sequence.setNumber(num);
+					}
+					
+					logger.trace("Sequence="+sequence);
+				}
+			}
+		}
+		
+		if(qName.equals(BINARY)){
+			inBinary=true;			
+			
+			if(imageId.equals(attributes.getValue(ID))){
+				inCoverBynary=true;				
+				book.setCover(null);
 			}
 		}
 			

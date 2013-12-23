@@ -4,5 +4,5 @@
 <comment/>
 <entry key="bibl.lib.dirs">~/books;</entry>
 <entry key="bibl.log.config">/log4j.xml</entry>
-<entry key="bibl.log.level">TRACE</entry>
+<entry key="bibl.log.level">ERROR</entry>
 </properties>

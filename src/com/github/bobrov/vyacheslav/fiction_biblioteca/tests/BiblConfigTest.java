@@ -88,7 +88,8 @@ public class BiblConfigTest {
 			
 			Assert.assertEquals(NEW_LEVEL, logger.getLevel().toString());
 		} finally {
-			biblConfig.setBibl_log_level(level.toString());
+			if(level!=null)
+				biblConfig.setBibl_log_level(level.toString());
 		}
 	}
 	
