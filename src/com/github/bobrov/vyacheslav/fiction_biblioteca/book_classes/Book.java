@@ -58,7 +58,7 @@ public class Book {
         
         try {
 			parser=factory.newSAXParser();
-			parser.parse(is, new BookParser(book));
+			parser.parse(is, new BookFb2Parser(book));
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			logger.error(PARSING_ERROR, e);
 		}

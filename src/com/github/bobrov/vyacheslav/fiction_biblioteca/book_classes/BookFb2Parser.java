@@ -10,15 +10,15 @@ import org.apache.commons.codec.binary.Base64;
 
 import com.github.bobrov.vyacheslav.fiction_biblioteca.Loggers;
 
-class BookParser extends DefaultHandler {	
-	static Logger logger= Loggers.getInstance().getLogger(BookParser.class);
+class BookFb2Parser extends DefaultHandler {	
+	static Logger logger= Loggers.getInstance().getLogger(BookFb2Parser.class);
 	
 	private static final String NUMBER = "number";
 	private static final String NAME = "name";
 	private static final String ID = "id";
 	private static final String XLINK_HREF = "xlink:href";
 	
-	enum Elements {
+	enum Element {
 		SEQUENCE,
 		BINARY,
 		IMAGE,
@@ -34,7 +34,7 @@ class BookParser extends DefaultHandler {
 		TITLE_INFO,
 		DESCRIPTION;
 		
-		static public Elements fromString(String val){
+		static public Element fromString(String val){
 			if (val.equals("sequence")) 
 				return SEQUENCE;
 			else if (val.equals("binary")) 
@@ -70,13 +70,13 @@ class BookParser extends DefaultHandler {
 		
 	Book book;
 	
-	Stack<Elements> stackElements=new Stack<>();
+	Stack<Element> stackElements=new Stack<>();
 		
 	String imageId;
 	
 	Author currAuthor;
 	
-	public BookParser(Book book) {
+	public BookFb2Parser(Book book) {
 		this.book=book;
 	}
 	
@@ -86,42 +86,55 @@ class BookParser extends DefaultHandler {
 
 	StringBuilder coverBuilder=new StringBuilder();
 	
+	/**
+	 * Загрузить данные при необходимости
+	 * @param element текущий элемент
+	 * @param ch массив символов
+	 * @param start начало
+	 * @param length длина
+	 */
+	void loadChars(Element element, char[] ch, int start, int length){
+		if(element==null)
+			return;		
+		
+		switch(element){
+			case BINARY:
+				coverBuilder.append(ch, start, length);
+				break;
+			case P:
+				book.addAnnotationLine(new String(ch, start, length));
+				break;
+			case BOOK_TITLE:
+				book.setTitle(new String(ch, start, length));
+				break;
+			case LAST_NAME:
+				currAuthor.lastName=new String(ch, start, length);
+				break;
+			case MIDDLE_NAME:
+				currAuthor.patrName=new String(ch, start, length);
+				break;
+			case FIRST_NAME:
+				currAuthor.firstName=new String(ch, start, length);
+				break;
+			case GENRE:
+				book.addGenre(new String(ch, start, length));
+				break;
+		default:
+			break;
+		}		
+	}
+	
 	@Override
 	public void characters(char[] ch, int start, int length)
 			throws SAXException {
 		
-		Elements currElement;
+		Element currElement;
 		if(stackElements.isEmpty())
 			currElement=null;
 		else 
 			currElement=stackElements.peek();
 		
-		if(currElement!=null){
-			switch(currElement){
-				case BINARY:
-					coverBuilder.append(ch, start, length);
-					break;
-				case P:
-					book.addAnnotationLine(new String(ch, start, length));
-					break;
-				case BOOK_TITLE:
-					book.setTitle(new String(ch, start, length));
-					break;
-				case LAST_NAME:
-					currAuthor.lastName=new String(ch, start, length);
-					break;
-				case MIDDLE_NAME:
-					currAuthor.patrName=new String(ch, start, length);
-					break;
-				case FIRST_NAME:
-					currAuthor.firstName=new String(ch, start, length);
-					break;
-				case GENRE:
-					book.addGenre(new String(ch, start, length));
-			default:
-				break;
-			}
-		}
+		loadChars(currElement, ch, start, length);
 		
 		super.characters(ch, start, length);
 	}
@@ -130,8 +143,8 @@ class BookParser extends DefaultHandler {
 	public void endElement(String uri, String localName, String qName)
 			throws SAXException {
 		
-		Elements newElement=Elements.fromString(qName);
-		Elements currElement=null;
+		Element newElement=Element.fromString(qName);
+		Element currElement=null;
 		if(!stackElements.isEmpty())
 			currElement=stackElements.peek();
 		
@@ -153,7 +166,14 @@ class BookParser extends DefaultHandler {
 		super.endElement(uri, localName, qName);
 	}
 	
-	boolean isCorrectParent(Elements element, Elements parent){
+	/**
+	 * Проверка корректности родителя элемента 
+	 * (в терминах необходимых нам данных, а не схемы данных xml!)
+	 * @param element открываемый элемент
+	 * @param parent родитель элемента
+	 * @return true - элемент нас интересует, false - нет
+	 */
+	boolean isCorrectParent(Element element, Element parent){
 		
 		if(element==null)
 			return false;
@@ -167,7 +187,7 @@ class BookParser extends DefaultHandler {
 					isCorrect=true;
 				break;
 			case TITLE_INFO:
-				if (parent==Elements.DESCRIPTION)
+				if (parent==Element.DESCRIPTION)
 					isCorrect=true;
 				break;				
 			case SEQUENCE:
@@ -176,22 +196,22 @@ class BookParser extends DefaultHandler {
 			case GENRE:
 			case BOOK_TITLE:
 			case AUTHOR:
-				if (parent==Elements.TITLE_INFO)
+				if (parent==Element.TITLE_INFO)
 					isCorrect=true;
 				break;				
 			case IMAGE:
-				if(parent==Elements.COVERPAGE)
+				if(parent==Element.COVERPAGE)
 					isCorrect=true;
 				break;				
 			case P:
-				if (parent==Elements.ANNOTATION)
+				if (parent==Element.ANNOTATION)
 					isCorrect=true;
 				break;				
 	
 			case LAST_NAME:
 			case MIDDLE_NAME:
 			case FIRST_NAME:
-				if (parent==Elements.AUTHOR)
+				if (parent==Element.AUTHOR)
 					isCorrect=true;
 				break;			
 			default:				
@@ -200,52 +220,71 @@ class BookParser extends DefaultHandler {
 		
 		return isCorrect;
 	}
+	
+	/**
+	 * Загрузка серии книги из аттрибутов элемента
+	 * @param attributes аттрибуты
+	 */
+	void loadSequence(Attributes attributes){
+		Sequence sequence=book.getSequence();
+		
+		String name=attributes.getValue(NAME);
+		if(name!=null)
+			sequence.setName(name);
+		
+		String number=attributes.getValue(NUMBER);
+		if(number!=null){					
+			Integer num=Integer.valueOf(number);
+			sequence.setNumber(num);
+		}
+	}
+	
+	/**
+	 * Настройка элемента перед стартом 
+	 * @param element стартующий элемент
+	 * @param attributes аттрибуты элемента
+	 * @return true - старт разрешен, false - старт отменяется
+	 */
+	boolean tuneElementBeforeStart(Element element, Attributes attributes){
+		boolean tuneOK=true;
+		
+		switch(element){
+			case SEQUENCE:
+				loadSequence(attributes);
+				break;					
+			case BINARY:
+				if(imageId.equals(attributes.getValue(ID)))				
+					book.setCover(null);
+				else
+					tuneOK=false;
+				break;					
+			case IMAGE:
+				imageId=attributes.getValue(XLINK_HREF).substring(1);
+				break;
+			case AUTHOR:					
+				currAuthor=new Author();
+				break;
+			default:
+				break;
+		}
+		
+		return tuneOK;
+	}
 
 	@Override
 	public void startElement(String uri, String localName, String qName,
 			Attributes attributes) throws SAXException {
 		
-		Elements newElement=Elements.fromString(qName);
-		Elements currElement=null;
+		Element newElement=Element.fromString(qName);
+		Element currElement=null;
 		if(!stackElements.isEmpty())
 			currElement=stackElements.peek();		
 		
-		if(isCorrectParent(newElement, currElement)){
-			switch(newElement){
-				case SEQUENCE:{
-						Sequence sequence=book.getSequence();
-						
-						String name=attributes.getValue(NAME);
-						if(name!=null)
-							sequence.setName(name);
-						
-						String number=attributes.getValue(NUMBER);
-						if(number!=null){					
-							Integer num=Integer.valueOf(number);
-							sequence.setNumber(num);
-						}
-					}
-					break;					
-				case BINARY:
-					if(imageId.equals(attributes.getValue(ID)))				
-						book.setCover(null);
-					else
-						newElement=null;
-					break;					
-				case IMAGE:
-					imageId=attributes.getValue(XLINK_HREF).substring(1);
-					break;
-				case AUTHOR:					
-					currAuthor=new Author();
-					break;
-			default:
-				break;
-			}
-					
-			if(newElement!=null)
-				stackElements.push(newElement);
-		}
-		
+		if(
+			isCorrectParent(newElement, currElement) && 
+			tuneElementBeforeStart(newElement, attributes))
+			stackElements.push(newElement);
+				
 		super.startElement(uri, localName, qName, attributes);
 	}
 	

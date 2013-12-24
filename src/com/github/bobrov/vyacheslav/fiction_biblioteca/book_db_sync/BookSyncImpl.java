@@ -28,8 +28,13 @@ public class BookSyncImpl implements BookSyncIf {
 	public BookSyncImpl() {
 	}
 	
-	ArrayList<File> getModifiedFiles(final long fromModTime, File dir){		
-		
+	/**
+	 * Получить список модифицированных файлов (рекурсивный поиск в подкаталогах)
+	 * @param fromModTime время модификации, позднее которой файлы не загружались 
+	 * @param dir имя каталога
+	 * @return список модифицированных файлов
+	 */
+	ArrayList<File> getModifiedFiles(final long fromModTime, File dir){
 		File[] newFiles=dir.listFiles(new FileFilter() {			
 			@Override
 			public boolean accept(File pathname) {
@@ -50,6 +55,12 @@ public class BookSyncImpl implements BookSyncIf {
 		return retFiles;
 	}
 	
+	/**
+	 * Получить список модифицированных файлов
+	 * @param fromModTime время модификации, позднее которой файлы не загружались 
+	 * @param dirName имя каталога
+	 * @return список модифицированных файлов
+	 */
 	ArrayList<File> getModifiedFiles(final long fromModTime, String dirName){
 		File dir=new File(dirName);
 		if(!dir.exists()){
@@ -63,6 +74,11 @@ public class BookSyncImpl implements BookSyncIf {
 		return getModifiedFiles(fromModTime, dir);
 	}	
 	
+	/**
+	 * Получить тип файла
+	 * @param file файл
+	 * @return тип файла
+	 */
 	String getFileType(File file){
 		String fileName=file.toString();
 		
@@ -74,6 +90,11 @@ public class BookSyncImpl implements BookSyncIf {
 		return type;
 	}
 	
+	/**
+	 * Загрузка книг из файла
+	 * @param bookFile файл архив книг, либо несжатый файл книги
+	 * @return список загруженных книг
+	 */
 	ArrayList<Book> loadBooksFromFile(File bookFile){		
 		ArrayList<Book> ret=new ArrayList<>();
 		
@@ -95,6 +116,21 @@ public class BookSyncImpl implements BookSyncIf {
 		
 		return ret;
 	}
+	
+	/**
+	 * Получить время последней модификации файла из списка
+	 * @param files список файлов 
+	 * @return время последней модификации файла из списка
+	 */
+	long getLastModified(ArrayList<File> files){
+		long lastModified=0l;
+		
+		for(File file:files)
+			if(file.lastModified()>lastModified)
+				lastModified=file.lastModified();
+		
+		return lastModified;
+	}
 
 	/* (non-Javadoc)
 	 * @see com.github.bobrov.vyacheslav.fiction_biblioteca.book_db_sync.BookSyncIf#sync(com.github.bobrov.vyacheslav.fiction_biblioteca.db_provider.DBproviderIf, java.util.List)
@@ -110,7 +146,10 @@ public class BookSyncImpl implements BookSyncIf {
 			
 			ArrayList<Book> books=new ArrayList<>();
 			for(File bookFile:newFiles)
-				books.addAll(loadBooksFromFile(bookFile));			
+				books.addAll(loadBooksFromFile(bookFile));
+			
+			provider.setLastModified(dir, getLastModified(newFiles));
+			provider.update(books);
 		}
 	}
 

@@ -31,4 +31,11 @@ public interface DBproviderIf {
 	 * @return время последней модификации
 	 */
 	public long getLastModified(String dir);
+	
+	/**
+	 * Сохранить ремя последней модификации файла в каталоге с книгами.
+	 * @param dir каталог с книгами
+	 * @param lastModified время последней модификации
+	 */
+	public void setLastModified(String dir, long lastModified);
 }
