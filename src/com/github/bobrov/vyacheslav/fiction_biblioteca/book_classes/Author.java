@@ -3,27 +3,41 @@
  */
 package com.github.bobrov.vyacheslav.fiction_biblioteca.book_classes;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Table;
+
 /**
  * @author Vyacheslav Bobrov
- *
  */
+@Entity
+@Table(appliesTo = "authors")
 public class Author {
+	private long id;
+	
 	String firstName;
 	String lastName;
 	String patrName;
 	
+	@Column(name="first_name")
 	public String getFirstName() {
 		return firstName;
 	}
 	public void setFirstName(String firstName) {
 		this.firstName = firstName;
 	}
+	@Column(name="last_name")
 	public String getLastName() {
 		return lastName;
 	}
 	public void setLastName(String lastName) {
 		this.lastName = lastName;
 	}
+	@Column(name="patr_name")
 	public String getPatrName() {
 		return patrName;
 	}
@@ -33,7 +47,6 @@ public class Author {
 	
 	public Author() {
 		super();
-		// TODO Auto-generated constructor stub
 	}
 	public Author(String firstName, String lastName, String patrName) {
 		super();
@@ -47,6 +60,7 @@ public class Author {
 		int result = 1;
 		result = prime * result
 				+ ((firstName == null) ? 0 : firstName.hashCode());
+		result = prime * result + (int) (id ^ (id >>> 32));
 		result = prime * result
 				+ ((lastName == null) ? 0 : lastName.hashCode());
 		result = prime * result
@@ -67,6 +81,8 @@ public class Author {
 				return false;
 		} else if (!firstName.equals(other.firstName))
 			return false;
+		if (id != other.id)
+			return false;
 		if (lastName == null) {
 			if (other.lastName != null)
 				return false;
@@ -81,9 +97,16 @@ public class Author {
 	}
 	@Override
 	public String toString() {
-		return "Author [firstName=" + firstName + ", lastName=" + lastName
-				+ ", patrName=" + patrName + "]";
+		return "Author [id=" + id + ", firstName=" + firstName + ", lastName="
+				+ lastName + ", patrName=" + patrName + "]";
 	}
 	
+	@Id
+	@GeneratedValue(generator="increment")
+	@GenericGenerator(name="increment", strategy="increment")
+	@Column(name="ID")
+	public long getId() {
+		return id;
+	}	
 	
 }
