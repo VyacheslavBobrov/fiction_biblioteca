@@ -175,6 +175,18 @@ ALTER SEQUENCE "genres_ID_seq" OWNED BY genres."ID";
 
 
 --
+-- Name: last_dirs_modified; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE last_dirs_modified (
+    dir_name character varying(150) NOT NULL,
+    last_mod timestamp without time zone
+);
+
+
+ALTER TABLE public.last_dirs_modified OWNER TO postgres;
+
+--
 -- Name: sequences; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -265,6 +277,14 @@ ALTER TABLE ONLY books_genres
 
 ALTER TABLE ONLY books
     ADD CONSTRAINT pk_books_id PRIMARY KEY ("ID");
+
+
+--
+-- Name: pk_dirs_modified_dir_name; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY last_dirs_modified
+    ADD CONSTRAINT pk_dirs_modified_dir_name PRIMARY KEY (dir_name);
 
 
 --
