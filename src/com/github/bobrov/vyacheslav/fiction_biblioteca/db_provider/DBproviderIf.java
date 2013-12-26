@@ -3,6 +3,7 @@
  */
 package com.github.bobrov.vyacheslav.fiction_biblioteca.db_provider;
 
+import java.math.BigInteger;
 import java.util.List;
 
 import com.github.bobrov.vyacheslav.fiction_biblioteca.book_classes.Book;
@@ -23,6 +24,13 @@ public interface DBproviderIf {
 	 * @return список книг
 	 */
 	public List<Book> load();
+	
+	/**
+	 * Загрузить кигу по ID
+	 * @param id идентификатор книги
+	 * @return книга
+	 */
+	public Book getBookByID(BigInteger id);
 	
 	/**
 	 * Получить время последней модификации файла в каталоге с книгами.
