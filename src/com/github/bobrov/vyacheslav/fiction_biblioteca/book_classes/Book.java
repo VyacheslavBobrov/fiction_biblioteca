@@ -32,6 +32,17 @@ public class Book {
 	public Book() {
 	}
 	
+	public Book(String title, String annotation, ArrayList<Author> authors,
+			Sequence series, ArrayList<String> genres, byte[] cover) {
+		super();
+		this.title = title;
+		this.annotation = annotation;
+		this.authors = authors;
+		this.sequence = series;
+		this.genres = genres;
+		this.cover = cover;
+	}
+	
 	/**Название книги*/
 	String title;
 	/**Аннотация*/
@@ -123,18 +134,7 @@ public class Book {
 
 	public void setTitle(String title) {
 		this.title = title;
-	}
-
-	public Book(String title, String annotation, ArrayList<Author> authors,
-			Sequence series, ArrayList<String> genres, byte[] cover) {
-		super();
-		this.title = title;
-		this.annotation = annotation;
-		this.authors = authors;
-		this.sequence = series;
-		this.genres = genres;
-		this.cover = cover;
-	}
+	}	
 
 	@Override
 	public int hashCode() {

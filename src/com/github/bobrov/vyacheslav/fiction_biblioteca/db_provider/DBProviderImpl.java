@@ -33,8 +33,8 @@ public class DBProviderImpl implements DBproviderIf {
 			session=HibernateUtil.getSessionFactory().openSession();
 			
 			for(Book book:books){
-				session.beginTransaction();
-				session.save(book);
+				session.beginTransaction();				
+				session.saveOrUpdate(book);
 				session.getTransaction().commit();
 			}
 		} finally {
